@@ -20,6 +20,7 @@ import vizconnect
 import platform
 import os.path
 import vizact
+import vizshape
 
 class Configuration():
 	
@@ -52,9 +53,6 @@ class Configuration():
 			self.wiimote = 0
 			self.__connectWiiMote()
 
-		if self.sysCfg['use_hmd'] and self.sysCfg['hmd']['type'] == 'DK2':
-			self.__setupOculusMon()
-
 		if self.sysCfg['use_phasespace']:
 			
 			from mocapInterface import phasespaceInterface			
@@ -64,6 +62,12 @@ class Configuration():
 			self.use_phasespace = True
 		else:
 			self.use_phasespace = False
+		
+		if self.sysCfg['use_hmd'] and self.sysCfg['hmd']['type'] == 'DK2':
+			#self.__setupOculusMon()
+			self.hmd = oculus.Rift()
+			self.setupExperimenterDisplay()
+			self.placeEyeNodes()
 			
 		viz.setOption("viz.glfinish", 1)
 		viz.setOption("viz.dwm_composition", 0)
@@ -107,52 +111,11 @@ class Configuration():
 			sys.exit(1)
 		self.sysCfg = sysCfg
 	
-		
-	def __setupOculusMon(self):
-		"""
-		Setup for the oculus rift dk2
-		Relies upon a cluster enabling a single client on the local machine
-		THe client enables a mirrored desktop view of what's displays inside the oculus DK2
-		Note that this does some juggling of monitor numbers for you.
-		"""
-		
-		#viz.window.setFullscreenMonitor(self.sysCfg['displays'])
-		#hmd = oculus.Rift(renderMode=oculus.RENDER_CLIENT)
+	def setupExperimenterDisplay(self):
 
-		displayList = self.sysCfg['displays'];
-		
-		if len(displayList) < 2:
-			print 'Display list is <1.  Need two displays.'
-		else:
-			print 'Using display number ' + str(displayList[0]) + ' for oculus display.'
-			print 'Using display number ' + str(displayList[1]) + ' for mirrored display.'
-		
-		### Set the rift and exp displays
-		
-		riftMon = []
-		expMon = displayList[1]
-		
-		with viz.cluster.MaskedContext(viz.MASTER):
+		viz.window.setFullscreenMonitor(self.sysCfg['experimenterDisplay'])
+		viz.window.setFullscreen(1)
 			
-			# Set monitor to the oculus rift
-			monList = viz.window.getMonitorList()
-			
-			for mon in monList:
-				if mon.name == 'Rift DK2':
-					riftMon = mon.id
-			
-			viz.window.setFullscreenMonitor(riftMon)
-			viz.window.setFullscreen(1)
-			
-		with viz.cluster.MaskedContext(viz.CLIENT1):
-			
-			count = 1
-			while( riftMon == expMon ):
-				expMon = count
-				
-			viz.window.setFullscreenMonitor(expMon)
-			viz.window.setFullscreen(1)
-
 	def __connectWiiMote(self):
 		
 		wii = viz.add('wiimote.dle')#Add wiimote extension
@@ -172,6 +135,7 @@ class Configuration():
 				
 	def linkObjectsUsingMocap(self):
 			
+			self.headTracker = vizconnect.getRawTracker('head_tracker')
 			self.mocap.start_thread()
 			
 			trackerDict = vizconnect.getTrackerDict()
@@ -194,7 +158,6 @@ class Configuration():
 		"""
 
 		riftOriTracker = vizconnect.getTracker('rift_tracker').getNode3d()			
-		self.headTracker = vizconnect.getRawTracker('head_tracker')
 		
 		ori_xyz = riftOriTracker.getEuler()
 		self.headTracker.setEuler( ori_xyz  )
@@ -202,8 +165,18 @@ class Configuration():
 		headRigidTracker = self.mocap.get_rigidTracker('hmd')	
 		self.headTracker.setPosition( headRigidTracker.get_position() )	
 		
+	def resetHeadOrientation(self):
+
+		vizconnect.getTracker('rift_tracker').resetHeading()
 	
-	def setEyeNodes(self):
+	def placeEyeNodes(self):
+		'''
+		For convenience, this places nodes at the cyclopean eye, left eye, and right eye.
+		When linkjing things to the eyes, link them to the cyclopean, left, or right eye nodes
+		e.g. viz.link(config.cycEyeNode,vizshape.addSphere(radius=0.05))
+		'''
+		
+		IOD = self.hmd.getIPD() / 2.0 
 		
 		self.cycEyeNode = vizshape.addSphere(0.015, color = viz.GREEN)
 		self.cycEyeNode.setParent(self.headTracker)
@@ -225,9 +198,13 @@ class Configuration():
 ## Here is where the magic happens
 
 def printEyePositions():
-	print 'Left eye: ' + str(config.leftEyeNode.getPosition())
-	print 'Right eye: ' + str(config.rightEyeNode.getPosition())
-	print 'Cyclopean eye: ' + str(config.cycEyeNode.getPosition())
+	'''
+	Print eye positions in global coordinates
+	'''
+	
+	print 'Left eye: ' + str(config.leftEyeNode.getPosition(viz.ABS_GLOBAL))
+	print 'Right eye: ' + str(config.rightEyeNode.getPosition(viz.ABS_GLOBAL))
+	print 'Cyclopean eye: ' + str(config.cycEyeNode.getPosition(viz.ABS_GLOBAL))
 	
 	
 config = Configuration()
@@ -235,8 +212,9 @@ config = Configuration()
 piazza = viz.addChild('piazza.osgb')
 
 
-if( config.sysCfg['use_hmd'] ):
-	hmd = oculus.Rift()
+vizact.onkeydown('o', config.resetHeadOrientation)
+
+
 
 if( config.sysCfg['use_phasespace'] ):
 	vizact.onkeydown('s', config.mocap.saveRigid,'hmd')
@@ -246,9 +224,14 @@ else:
 
 viz.go()
 
-###  Here is an example of how to show something to the right eye only
-#import vizshape
-#duck = vizshape.addCircle(0.05)
-#duck.setParent(config.leftEyeNode)
-#duck.renderToEye(viz.LEFT_EYE)
+def showDuckToOneEye():
+	##  Here is an example of how to place something in front of the left eye, and to make it visible to ONLY the left eye
+	binocularRivalDuck = viz.addChild('duck.cfg')
+	binocularRivalDuck.setScale([0.25]*3)
+	binocularRivalDuck.setParent(config.leftEyeNode)
+	binocularRivalDuck.setPosition([0,-.3,2],viz.ABS_PARENT)
+	binocularRivalDuck.setEuler([180,0,0])
+	binocularRivalDuck.renderToEye(viz.LEFT_EYE)
 
+# Comment this out if you don't want to see the duck
+showDuckToOneEye()
