@@ -202,24 +202,53 @@ class Configuration():
 		headRigidTracker = self.mocap.get_rigidTracker('hmd')	
 		self.headTracker.setPosition( headRigidTracker.get_position() )	
 		
+	
+	def setEyeNodes(self):
+		
+		self.cycEyeNode = vizshape.addSphere(0.015, color = viz.GREEN)
+		self.cycEyeNode.setParent(self.headTracker)
+		self.cycEyeNode.disable(viz.RENDERING)
+		
+		self.leftEyeNode = vizshape.addSphere(0.005, color = viz.BLUE)
+		self.leftEyeNode.disable(viz.RENDERING)
+		self.leftEyeNode.setParent(self.headTracker)
+		self.leftEyeNode.setPosition(-IOD/2, 0, 0.0,viz.ABS_PARENT)
+		
+		self.rightEyeNode = vizshape.addSphere(0.005, color = viz.RED)
+		self.rightEyeNode.disable(viz.RENDERING)
+		self.rightEyeNode.setParent(self.headTracker)
+		self.rightEyeNode.setPosition(IOD/2, 0, 0.0,viz.ABS_PARENT)
 
+		
 ################################################################################
 ################################################################################
 ## Here is where the magic happens
 
+def printEyePositions():
+	print 'Left eye: ' + str(config.leftEyeNode.getPosition())
+	print 'Right eye: ' + str(config.rightEyeNode.getPosition())
+	print 'Cyclopean eye: ' + str(config.cycEyeNode.getPosition())
+	
+	
 config = Configuration()
 
 piazza = viz.addChild('piazza.osgb')
 
 
-hmd = oculus.Rift()
+if( config.sysCfg['use_hmd'] ):
+	hmd = oculus.Rift()
+
+if( config.sysCfg['use_phasespace'] ):
+	vizact.onkeydown('s', config.mocap.saveRigid,'hmd')
+	vizact.onkeydown('r', config.mocap.resetRigid,'hmd')
+else:
+	viz.MainView.setPosition([0,1.6,0])
+
 viz.go()
 
-
-vizact.onkeydown('s', config.mocap.saveRigid,'hmd')
-vizact.onkeydown('r', config.mocap.resetRigid,'hmd')
-
-
-
-
+###  Here is an example of how to show something to the right eye only
+#import vizshape
+#duck = vizshape.addCircle(0.05)
+#duck.setParent(config.leftEyeNode)
+#duck.renderToEye(viz.LEFT_EYE)
 
