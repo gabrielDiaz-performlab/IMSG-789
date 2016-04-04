@@ -228,7 +228,7 @@ viz.go()
 ################################################################################
 ################start playing around from here  ################################
 
-def showDuckToOneEye():
+def showDuckToBothEyes():
 	##  Here is an example of how to place something in front of the left eye, and to make it visible to ONLY the left eye
 	binocularRivalDuck = viz.addChild('duck.cfg')
 	binocularRivalDuck.setScale([0.25]*3)
@@ -261,7 +261,7 @@ def showImageToOneEye():
 	br.renderToEye(viz.RIGHT_EYE)
 
 
-def showImageToBothEye():
+def showImageToBothEyes():
 	
 	video = viz.add('VideoCamera.dle')
 	
@@ -287,10 +287,8 @@ def showImageToBothEye():
 		cullFace = False
 	)
 	
-	pic_l = viz.addTexture('rectified-cam1.jpg')
 	pl_left.texture(cam1)
 	
-	pic_r = viz.addTexture('rectified-cam2.jpg')
 	pl_right.texture(cam2)
 	
 	pl_left.setParent(config.leftEyeNode)
@@ -306,5 +304,6 @@ def showImageToBothEye():
 	pl_right.renderToEye(viz.RIGHT_EYE)
 	
 # Comment this out if you don't want to see the duck
-showImageToBothEye()
-#showDuckToOneEye()
+# showImageToBothEyes()
+showDuckToBothEyes()
+
