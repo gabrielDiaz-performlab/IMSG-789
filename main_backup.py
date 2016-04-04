@@ -211,6 +211,8 @@ config = Configuration()
 
 #piazza = viz.addChild('piazza.osgb')
 
+#viz.MainWindow.fov(74.73,1.77)
+
 vizact.onkeydown('o', config.resetHeadOrientation)
 
 
@@ -235,76 +237,26 @@ def showDuckToOneEye():
 	binocularRivalDuck.setParent(config.leftEyeNode)
 	binocularRivalDuck.setPosition([0,-.3,2],viz.ABS_PARENT)
 	binocularRivalDuck.setEuler([180,0,0])
+	binocularRivalDuck.renderToEye(viz.LEFT_EYE)
 
 def showImageToOneEye():
-	
-	s = 1000
-	focalLen = 0.00081566 * s
-	planeWidth = 0.00126 * s
-	planeHeight = 0.0022 * s
-	camcenter_dX = (640-606.3966)*1.75*(10^-6) * s
-	camcenter_dY = (360-310.6875)*1.75*(10^-6) * s
-
 	br = vizshape.addPlane(
-		size = [planeHeight,planeWidth],
+		size = [0.00224,0.00126],
 		axis = vizshape.AXIS_Z,
 		cullFace = False
 	)
 	
 	pic = viz.addTexture('imcalib30_corr.jpg')
 	br.texture(pic)
+	#br.setScale([0.25]*3)
 	
-	br.setParent(config.rightEyeNode)
-	br.setPosition([0,0,focalLen],viz.ABS_PARENT)
+	br.setParent(config.leftEyeNode)
+#	br.setPosition([-0.00005882,1.06 - 0.00008596,0.000814],viz.ABS_PARENT)
+	br.setPosition([0,0,0.1+0.000814],viz.ABS_PARENT)
+	#br.setPosition([0,0,1],viz.ABS_PARENT)
 	
 	br.setEuler([180,0,0])
-	br.renderToEye(viz.RIGHT_EYE)
+	br.renderToEye(viz.LEFT_EYE)
 
-
-def showImageToBothEye():
-	
-	video = viz.add('VideoCamera.dle')
-	
-	cam1 = video.addWebcam()
-	cam2 = video.addWebcam()
-	
-	s = 1000
-	focalLen = 0.00081566 * s
-	planeWidth = 0.00126 * s
-	planeHeight = 0.0022 * s
-	camcenter_dX = (640-606.3966)*1.75*(10^-6) * s
-	camcenter_dY = (360-310.6875)*1.75*(10^-6) * s
-
-	pl_left = vizshape.addPlane(
-		size = [planeHeight,planeWidth],
-		axis = vizshape.AXIS_Z,
-		cullFace = False
-	)
-	
-	pl_right = vizshape.addPlane(
-		size = [planeHeight,planeWidth],
-		axis = vizshape.AXIS_Z,
-		cullFace = False
-	)
-	
-	pic_l = viz.addTexture('rectified-cam1.jpg')
-	pl_left.texture(cam1)
-	
-	pic_r = viz.addTexture('rectified-cam2.jpg')
-	pl_right.texture(cam2)
-	
-	pl_left.setParent(config.leftEyeNode)
-	pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)	
-	
-	pl_right.setParent(config.rightEyeNode)
-	pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
-	
-	pl_left.setEuler([180,0,90])
-	pl_right.setEuler([180,0,90])
-	
-	pl_left.renderToEye(viz.LEFT_EYE)
-	pl_right.renderToEye(viz.RIGHT_EYE)
-	
 # Comment this out if you don't want to see the duck
-showImageToBothEye()
-#showDuckToOneEye()
+showImageToOneEye()
