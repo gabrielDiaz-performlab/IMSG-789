@@ -176,9 +176,7 @@ class Configuration():
 		e.g. viz.link(config.cycEyeNode,vizshape.addSphere(radius=0.05))
 		'''
 		
-		IOD = self.hmd.getIPD() 
-		print("IOD")
-		print(IOD)
+		IOD = self.hmd.getIPD() / 2.0 
 		
 		self.cycEyeNode = vizshape.addSphere(0.015, color = viz.GREEN)
 		self.cycEyeNode.setParent(self.headTracker)
@@ -211,7 +209,7 @@ def printEyePositions():
 	
 config = Configuration()
 
-piazza = viz.addChild('piazza.osgb')
+#piazza = viz.addChild('piazza.osgb')
 
 vizact.onkeydown('o', config.resetHeadOrientation)
 
@@ -220,27 +218,10 @@ vizact.onkeydown('o', config.resetHeadOrientation)
 if( config.sysCfg['use_phasespace'] ):
 	vizact.onkeydown('s', config.mocap.saveRigid,'hmd')
 	vizact.onkeydown('r', config.mocap.resetRigid,'hmd')
-	print 'Using Phasespace'
 else:
 	viz.MainView.setPosition([0,1.6,0])
-	print 'Using Vizard world view'
 
-viz.go
-
-
-
-'''
-table = vizshape.addPlane(   
-	size = [1.0,1.0],
-	axis = vizshape.AXIS_Z, 
-	cullFace = True   
-)
-table.setPosition(0,0,1)
-#table.setEuler([180,0,0])
-'''
-
-box = vizshape.addBox([0.2,0.2,0.2],splitFaces=True,pos=(0,2,3))
-
+viz.go()
 
 
 ################################################################################
@@ -286,10 +267,15 @@ def showImageToBothEyes():
 	outP = video.getWebcamNames(available = False)
 	print(outP)
 	
-	cam1 = video.addWebcam(id=0, size=(640,480))
-	cam2 = video.addWebcam(id=1, size=(640,480))
+	cam1 = video.addWebcam(id = 0, size=video.WEBCAM_MAX_SIZE)
+	cam2 = video.addWebcam(id = 1, size=video.WEBCAM_MAX_SIZE)
 	
+	#import VideoVision
+	#ar = viz.add("artoolkit.dle")
+	#cam1 = ar.addWebCamera(size = [1280,780])
+	#cam2 = ar.addWebCamera(size = [1280,780])
 	
+
 	s = 1000
 	focalLen = 0.00081566 * s
 	planeWidth = 0.00126 * s
@@ -319,21 +305,15 @@ def showImageToBothEyes():
 	pl_right.setParent(config.rightEyeNode)
 	pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
 	
-	## Add code to update orientation with changes in head orientation
-	headEuler_YPR = config.headTracker.getEuler()
-	pl_left.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
-	pl_right.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
-	
-	## This code must be modified so that it works in conjunction with the linking code above
-	#pl_left.setEuler([180,0,-90])
-	#pl_right.setEuler([180,0,-90])
-	##
-	
+	pl_left.setEuler([180,0,-90])
+	pl_right.setEuler([180,0,-90])
 	
 	pl_left.renderToEye(viz.LEFT_EYE)
 	pl_right.renderToEye(viz.RIGHT_EYE)
 	
 # Comment this out if you don't want to see the duck
-# showImageToBothEyes()
+
+showImageToBothEyes()
 # showDuckToBothEyes()
+
 
