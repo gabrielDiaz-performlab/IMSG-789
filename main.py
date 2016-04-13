@@ -227,23 +227,7 @@ else:
 
 viz.go
 
-
-
-'''
-table = vizshape.addPlane(   
-	size = [1.0,1.0],
-	axis = vizshape.AXIS_Z, 
-	cullFace = True   
-)
-table.setPosition(0,0,1)
-#table.setEuler([180,0,0])
-'''
-
-box = vizshape.addBox([0.2,0.2,0.2],splitFaces=True,pos=(0,2,3))
-
-
-
-################################################################################
+###############################################################################
 ################################################################################
 ################start playing around from here  ################################
 
@@ -254,7 +238,9 @@ def showDuckToBothEyes():
 	binocularRivalDuck.setParent(config.leftEyeNode)
 	binocularRivalDuck.setPosition([0,-.3,2],viz.ABS_PARENT)
 	binocularRivalDuck.setEuler([180,0,0])
-
+	## do not write renderToEye(viz.RIGHT_EYE) function if you want to render to both eyes. If both eyes have to show, 
+	## keep it as it is 
+	
 def showImageToOneEye():
 	
 	s = 1000
@@ -290,7 +276,7 @@ def showImageToBothEyes():
 	cam2 = video.addWebcam(id=1, size=(640,480))
 	
 	
-	s = 1000
+	s = 3000
 	focalLen = 0.00081566 * s
 	planeWidth = 0.00126 * s
 	planeHeight = 0.0022 * s
@@ -324,22 +310,18 @@ def showImageToBothEyes():
 	pl_left.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
 	pl_right.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
 	
-	## This code must be modified so that it works in conjunction with the linking code above
-	#pl_left.setEuler([180,0,-90])
-	#pl_right.setEuler([180,0,-90])
-	##
-	
-	
 	pl_left.renderToEye(viz.LEFT_EYE)
 	pl_right.renderToEye(viz.RIGHT_EYE)
 	
-# Comment this out if you don't want to see the duck
-# showImageToBothEyes()
-# showDuckToBothEyes()
 
-tableTracker = config.mocap.get_rigidTracker('table')	
-
-def printTrackerPosition(tracker):
-	print tracker.get_position()
+def showBoxOnEyes(tableIn):
+	tableTracker = config.mocap.get_rigidTracker('table')#gets the table location and orientation from Phasespace
+	loc_table = tableTracker.get_position() #this stores the location in a list for modifying
+		 
+	tableIn.setPosition(loc_table[0], loc_table[1]/2.0, loc_table[2])
 	
-vizact.onkeydown('t',printTrackerPosition,tableTracker)
+	ori_table = tableTracker.get_euler()
+	tableIn.setEuler(ori_table)
+	
+table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
+vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
