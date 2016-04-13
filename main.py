@@ -337,3 +337,9 @@ def showImageToBothEyes():
 # showImageToBothEyes()
 # showDuckToBothEyes()
 
+tableTracker = config.mocap.get_rigidTracker('table')	
+
+def printTrackerPosition(tracker):
+	print tracker.get_position()
+	
+vizact.onkeydown('t',printTrackerPosition,tableTracker)
