@@ -1,6 +1,7 @@
 ﻿'''
 
-March 2016 
+April 2016 
+Aneesh Rangnekar, Anna Starynska, Arun K., Mahshad M., Sanketh Moudgalya, Rakshit Kothari
 Gabriel Diaz 
 Carlson Center for Imaging Science
 Rochester Institute of Technology
@@ -176,7 +177,9 @@ class Configuration():
 		e.g. viz.link(config.cycEyeNode,vizshape.addSphere(radius=0.05))
 		'''
 		
-		IOD = self.hmd.getIPD() / 2.0 
+		IOD = self.hmd.getIPD() 
+		print("IOD")
+		print(IOD)
 		
 		self.cycEyeNode = vizshape.addSphere(0.015, color = viz.GREEN)
 		self.cycEyeNode.setParent(self.headTracker)
@@ -209,8 +212,6 @@ def printEyePositions():
 	
 config = Configuration()
 
-#piazza = viz.addChild('piazza.osgb')
-
 vizact.onkeydown('o', config.resetHeadOrientation)
 
 
@@ -218,13 +219,14 @@ vizact.onkeydown('o', config.resetHeadOrientation)
 if( config.sysCfg['use_phasespace'] ):
 	vizact.onkeydown('s', config.mocap.saveRigid,'hmd')
 	vizact.onkeydown('r', config.mocap.resetRigid,'hmd')
+	print 'Using Phasespace'
 else:
 	viz.MainView.setPosition([0,1.6,0])
+	print 'Using Vizard world view'
 
-viz.go()
+viz.go
 
-
-################################################################################
+###############################################################################
 ################################################################################
 ################start playing around from here  ################################
 
@@ -235,7 +237,9 @@ def showDuckToBothEyes():
 	binocularRivalDuck.setParent(config.leftEyeNode)
 	binocularRivalDuck.setPosition([0,-.3,2],viz.ABS_PARENT)
 	binocularRivalDuck.setEuler([180,0,0])
-
+	## do not write renderToEye(viz.RIGHT_EYE) function if you want to render to both eyes. If both eyes have to show, 
+	## keep it as it is 
+	
 def showImageToOneEye():
 	
 	s = 1000
@@ -267,16 +271,11 @@ def showImageToBothEyes():
 	outP = video.getWebcamNames(available = False)
 	print(outP)
 	
-	cam1 = video.addWebcam(id = 0, size=video.WEBCAM_MAX_SIZE)
-	cam2 = video.addWebcam(id = 1, size=video.WEBCAM_MAX_SIZE)
+	cam1 = video.addWebcam(id=0, size=(640,480))
+	cam2 = video.addWebcam(id=1, size=(640,480))
 	
-	#import VideoVision
-	#ar = viz.add("artoolkit.dle")
-	#cam1 = ar.addWebCamera(size = [1280,780])
-	#cam2 = ar.addWebCamera(size = [1280,780])
 	
-
-	s = 1000
+	s = 3000
 	focalLen = 0.00081566 * s
 	planeWidth = 0.00126 * s
 	planeHeight = 0.0022 * s
@@ -305,15 +304,35 @@ def showImageToBothEyes():
 	pl_right.setParent(config.rightEyeNode)
 	pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
 	
-	pl_left.setEuler([180,0,-90])
-	pl_right.setEuler([180,0,-90])
+	## Add code to update orientation with changes in head orientation
+	headEuler_YPR = config.headTracker.getEuler()
+	pl_left.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
+	pl_right.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
 	
 	pl_left.renderToEye(viz.LEFT_EYE)
 	pl_right.renderToEye(viz.RIGHT_EYE)
 	
-# Comment this out if you don't want to see the duck
 
-showImageToBothEyes()
-# showDuckToBothEyes()
+def showBoxOnEyes(tableIn):
+	tableTracker = config.mocap.get_rigidTracker('table')#gets the table location and orientation from Phasespace
+	loc_table = tableTracker.get_position() #this stores the location in a list for modifying
+		 
+	tableIn.setPosition(loc_table[0], loc_table[1]/2.0, loc_table[2])
+	
+	ori_table = tableTracker.get_euler()
+	tableIn.setEuler(ori_table)
+	
+table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
 
+ball = viz.addChild('basketball.osgb')
 
+balllink = viz.link(table,ball)
+balllink.preTrans([0,0.5,0])
+glow = viz.addChild('fire.osg')
+glowlink = viz.link(ball,glow)
+
+vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
+
+piazza = viz.addChild('piazza.osgb')
+
+#showImageToBothEyes()
