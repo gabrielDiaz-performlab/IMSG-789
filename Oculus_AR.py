@@ -14,14 +14,18 @@ viz.res.addPath('resources')
 sys.path.append('utils')
 
 import oculus
-from configobj import ConfigObj
-from configobj import flatten_errors
-from validate import Validator
 import vizconnect
 import platform
 import os.path
 import vizact
 import vizshape
+import cv2
+import viztask
+
+from configobj import ConfigObj
+from configobj import flatten_errors
+from validate import Validator
+from PIL import Image
 
 class Configuration():
 	
@@ -215,7 +219,6 @@ config = Configuration()
 vizact.onkeydown('o', config.resetHeadOrientation)
 
 
-
 if( config.sysCfg['use_phasespace'] ):
 	vizact.onkeydown('s', config.mocap.saveRigid,'hmd')
 	vizact.onkeydown('r', config.mocap.resetRigid,'hmd')
@@ -239,7 +242,120 @@ def showDuckToBothEyes():
 	binocularRivalDuck.setEuler([180,0,0])
 	## do not write renderToEye(viz.RIGHT_EYE) function if you want to render to both eyes. If both eyes have to show, 
 	## keep it as it is 
+
+def PIL_TO_VIZARD(image,texture):
 	
+	"""Copy the PIL image to the Vizard texture"""
+	im = image.transpose(Image.FLIP_TOP_BOTTOM)
+	texture.setImageData(im.convert('RGB').tobytes(),im.size)
+
+def showImageToBothEyes():
+	s = 3000
+	focalLen = 0.00081566 * s
+	planeWidth = 0.00126 * s
+	planeHeight = 0.0022 * s
+	camcenter_dX = (640-606.3966)*1.75*(10^-6) * s
+	camcenter_dY = (360-310.6875)*1.75*(10^-6) * s
+
+	# Generate blank texture and apply them on a Quad
+	tex_r =viz.addBlankTexture([planeWidth, planeHeight])
+	quad_r = viz.addTexQuad(pos = ([0,0,focalLen]),texture = tex_r, parent = config.rightEyeNode)
+
+	tex_l =viz.addBlankTexture([planeWidth, planeHeight])
+	quad_l = viz.addTexQuad(pos = ([0,0,focalLen]),texture = tex_r, parent = config.leftEyeNode)
+	
+	capture_r = cv2.VideoCapture(0)
+	capture_l =cv2.VideoCapture(1)
+
+	capture_r.set(3,1920)
+	capture_r.set(4,1080)
+	capture_r.set(5,30)
+	
+	capture_l.set(3,1920)
+	capture_l.set(4,1080)
+	capture_l.set(5,30)
+
+	while True:
+		
+		ret, frame_r = capture_r.read()
+		ret, frame_l = capture_l.read()
+		
+		frame_r = cv2.cvtColor(frame_r, cv2.COLOR_BGR2RGB)
+		frame_l = cv2.cvtColor(frame_l, cv2.COLOR_BGR2RGB)
+		
+		
+		
+	'''
+	video = viz.add('VideoCamera.dle')
+	outP = video.getWebcamNames(available = False)
+	print(outP)
+	
+	cam1 = video.addWebcam(id=0, size=(640,480))
+	cam2 = video.addWebcam(id=1, size=(640,480))
+	
+	
+	pl_left = vizshape.addPlane(
+		size = [planeHeight,planeWidth],
+		axis = vizshape.AXIS_Z,
+		cullFace = False
+	)
+	
+	pl_right = vizshape.addPlane(
+		size = [planeHeight,planeWidth],
+		axis = vizshape.AXIS_Z,
+		cullFace = False
+	)
+	
+	pl_left.texture(cam1)
+	
+	pl_right.texture(cam2)
+	
+	pl_left.setParent(config.leftEyeNode)
+	pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)	
+	
+	pl_right.setParent(config.rightEyeNode)
+	pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
+	'''
+	## Add code to update orientation with changes in head orientation
+	
+	headEuler_YPR = config.headTracker.getEuler()
+	tex_l.setEuler([180 + headEuler_YPR[0], 0 + headEuler_YPR[1], -90 + headEuler_YPR[2]])
+	tex_l.setEuler([180 + headEuler_YPR[0], 0 + headEuler_YPR[1], -90 + headEuler_YPR[2]])
+	
+	tex_r.renderToEye(viz.LEFT_EYE)
+	tex_r.renderToEye(viz.RIGHT_EYE)
+	
+
+def showBoxOnEyes(tableIn):
+	tableTracker = config.mocap.get_rigidTracker('table')#gets the table location and orientation from Phasespace
+	loc_table = tableTracker.get_position() #this stores the location in a list for modifying
+		 
+	tableIn.setPosition(loc_table[0], loc_table[1]/2.0, loc_table[2])
+	
+	ori_table = tableTracker.get_euler()
+	tableIn.setEuler(ori_table)
+	
+#table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
+
+#ball = viz.addChild('basketball.osgb')
+
+#balllink = viz.link(table,ball)
+#balllink.preTrans([0,0.5,0])
+#glow = viz.addChild('fire.osg')
+#glowlink = viz.link(ball,glow)
+
+#vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
+
+#piazza = viz.addChild('piazza.osgb')
+
+showImageToBothEyes()
+
+
+
+
+### CODE NOT NEEDED
+
+'''
 def showImageToOneEye():
 	
 	s = 1000
@@ -263,76 +379,4 @@ def showImageToOneEye():
 	
 	br.setEuler([180,0,0])
 	br.renderToEye(viz.RIGHT_EYE)
-
-
-def showImageToBothEyes():
-	
-	video = viz.add('VideoCamera.dle')
-	outP = video.getWebcamNames(available = False)
-	print(outP)
-	
-	cam1 = video.addWebcam(id=0, size=(640,480))
-	cam2 = video.addWebcam(id=1, size=(640,480))
-	
-	
-	s = 3000
-	focalLen = 0.00081566 * s
-	planeWidth = 0.00126 * s
-	planeHeight = 0.0022 * s
-	camcenter_dX = (640-606.3966)*1.75*(10^-6) * s
-	camcenter_dY = (360-310.6875)*1.75*(10^-6) * s
-
-	pl_left = vizshape.addPlane(
-		size = [planeHeight,planeWidth],
-		axis = vizshape.AXIS_Z,
-		cullFace = False
-	)
-	
-	pl_right = vizshape.addPlane(
-		size = [planeHeight,planeWidth],
-		axis = vizshape.AXIS_Z,
-		cullFace = False
-	)
-	
-	pl_left.texture(cam1)
-	
-	pl_right.texture(cam2)
-	
-	pl_left.setParent(config.leftEyeNode)
-	pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)	
-	
-	pl_right.setParent(config.rightEyeNode)
-	pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
-	
-	## Add code to update orientation with changes in head orientation
-	headEuler_YPR = config.headTracker.getEuler()
-	pl_left.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
-	pl_right.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
-	
-	pl_left.renderToEye(viz.LEFT_EYE)
-	pl_right.renderToEye(viz.RIGHT_EYE)
-	
-
-def showBoxOnEyes(tableIn):
-	tableTracker = config.mocap.get_rigidTracker('table')#gets the table location and orientation from Phasespace
-	loc_table = tableTracker.get_position() #this stores the location in a list for modifying
-		 
-	tableIn.setPosition(loc_table[0], loc_table[1]/2.0, loc_table[2])
-	
-	ori_table = tableTracker.get_euler()
-	tableIn.setEuler(ori_table)
-	
-table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
-
-ball = viz.addChild('basketball.osgb')
-
-balllink = viz.link(table,ball)
-balllink.preTrans([0,0.5,0])
-glow = viz.addChild('fire.osg')
-glowlink = viz.link(ball,glow)
-
-vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
-
-piazza = viz.addChild('piazza.osgb')
-
-#showImageToBothEyes()
+'''

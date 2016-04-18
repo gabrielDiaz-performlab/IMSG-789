@@ -8,9 +8,10 @@ tex = viz.addBlankTexture([1,1])
 quad = viz.addTexQuad(pos=(0,1.8,2),texture = tex)
 
 def PIL_TO_VIZARD(image,texture):
-    """Copy the PIL image to the Vizard texture"""
-    im = image.transpose(Image.FLIP_TOP_BOTTOM)
-    texture.setImageData(im.convert('RGB').tobytes(),im.size)
+	
+	"""Copy the PIL image to the Vizard texture"""
+	im = image.transpose(Image.FLIP_TOP_BOTTOM)
+	texture.setImageData(im.convert('RGB').tobytes(),im.size)
 
 def opencvMain():
 	capture = cv2.VideoCapture(0)#conect to a camera
