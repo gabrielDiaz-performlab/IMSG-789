@@ -10,6 +10,9 @@ Rochester Institute of Technology
 
 import viz
 
+viz.fov(40,1.77)
+
+
 viz.res.addPath('resources')
 sys.path.append('utils')
 
@@ -240,58 +243,70 @@ def PIL_TO_VIZARD(image,texture):
 	im = image.transpose(Image.FLIP_TOP_BOTTOM)
 	texture.setImageData(im.convert('RGB').tobytes(),im.size)
 
-#def showImageToBothEyes():
-#m = 1280
-#n = 720
-#d = 449
-#s = 1.75*10**-6
-#scale = 3000
+# uncomment this to use standard approach
+'''
+m = 1280
+n = 720
+d = 449
+s = 1.75*10**-6
+scale = 10000
 
-#focalLen = d*s*scale
-#planeWidth = m*s*scale
-#planeHeight = n*s*scale
-
+focalLen = d*s*scale
+planeWidth = m*s*scale
+planeHeight = n*s*scale
+'''
 focalLen = 7 #meter
 planeWidth = 2*focalLen*math.tan(111.316*3.14/(2*180))
 planeHeight = 2*focalLen*math.tan(74.34*3.14/(2*180))
 
+pl_left = vizshape.addPlane(
+		size = [planeWidth,planeHeight],
+		axis = vizshape.AXIS_Z,
+		cullFace = False
+		)
+
+pl_right = vizshape.addPlane(
+		size = [planeWidth,planeHeight],
+		axis = vizshape.AXIS_Z,
+		cullFace = False
+		)
+
+pl_left.setParent(config.leftEyeNode)
+pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)
+
+pl_right.setParent(config.rightEyeNode)
+pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
+
 # Generate blank texture and apply them on a Quad
 tex_r = viz.addBlankTexture([planeWidth, planeHeight])
-quad_r = viz.addTexQuad(pos = ([0,0,focalLen]),size = [planeWidth, planeHeight],texture = tex_r, parent = config.rightEyeNode)
+#quad_r = viz.addTexQuad(pos = ([0,0,focalLen]),size = [planeWidth, planeHeight],texture = tex_r, parent = config.rightEyeNode)
 
 tex_l = viz.addBlankTexture([planeWidth, planeHeight])
-quad_l = viz.addTexQuad(pos = ([0,0,focalLen]),size = [planeWidth, planeHeight],texture = tex_l, parent = config.leftEyeNode)  #tex_l change and run again!
-print 'Before Euler'
-print quad_l.getSize()
+#quad_l = viz.addTexQuad(pos = ([0,0,focalLen]),size = [planeWidth, planeHeight],texture = tex_l, parent = config.leftEyeNode)  #tex_l change and run again!
+
+pl_left.texture(tex_l)
+pl_right.texture(tex_r)
 
 headEuler_YPR = config.headTracker.getEuler()
-quad_l.setEuler([0 + headEuler_YPR[0], 0 + headEuler_YPR[1], 90 + headEuler_YPR[2]])
-quad_r.setEuler([0 + headEuler_YPR[0], 0 + headEuler_YPR[1], 90 + headEuler_YPR[2]])
-
-print 'Before function'
-print quad_l.getSize()
+pl_left.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
+pl_right.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
 
 capture_r = cv2.VideoCapture(0)
 capture_l = cv2.VideoCapture(1)
 
-capture_r.set(3,640)
-capture_r.set(4,480)
+capture_r.set(3,1280)
+capture_r.set(4,720)
 capture_r.set(5,30)
 
-capture_l.set(3,640)
-capture_l.set(4,480)
+capture_l.set(3,1280)
+capture_l.set(4,720)
 capture_l.set(5,30)
 
-	#while True:
-	
-def arbirtaryFunction():
+def renderingCamera():
 	
 	ret_r, frame_r = capture_r.read()
 	ret_l, frame_l = capture_l.read()
 		
-	#print "Right Camera returns: ", ret_r, "; Shape: ", frame_r.shape
-	#print "Left Camera returns: ", ret_l, "; Shape: ", frame_l.shape	
-	
 	frame_r = cv2.cvtColor(frame_r, cv2.COLOR_BGR2RGB)
 	frame_l = cv2.cvtColor(frame_l, cv2.COLOR_BGR2RGB)
 	
@@ -303,46 +318,10 @@ def arbirtaryFunction():
 	PIL_TO_VIZARD(pil_r,tex_r)
 	PIL_TO_VIZARD(pil_l,tex_l)
 	
-	#cv2.waitKey(10)
-	#yield viztask.waitTime(0)
-	quad_l.renderToEye(viz.LEFT_EYE)
-	quad_r.renderToEye(viz.RIGHT_EYE)
+	pl_left.renderToEye(viz.LEFT_EYE)
+	pl_right.renderToEye(viz.RIGHT_EYE)
 	
-vizact.onupdate(viz.PRIORITY_MEDIA,arbirtaryFunction)
-	
-	
-'''
-video = viz.add('VideoCamera.dle')
-outP = video.getWebcamNames(available = False)
-print(outP)
-
-cam1 = video.addWebcam(id=0, size=(640,480))
-cam2 = video.addWebcam(id=1, size=(640,480))
-
-
-pl_left = vizshape.addPlane(
-	size = [planeHeight,planeWidth],
-	axis = vizshape.AXIS_Z,
-	cullFace = False
-)
-
-pl_right = vizshape.addPlane(
-	size = [planeHeight,planeWidth],
-	axis = vizshape.AXIS_Z,
-	cullFace = False
-)
-
-pl_left.texture(cam1)
-
-pl_right.texture(cam2)
-
-pl_left.setParent(config.leftEyeNode)
-pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)	
-
-pl_right.setParent(config.rightEyeNode)
-pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
-'''
-## Add code to update orientation with changes in head orientation
+vizact.onupdate(viz.PRIORITY_MEDIA,renderingCamera)
 
 def showBoxOnEyes(tableIn):
 	tableTracker = config.mocap.get_rigidTracker('table')#gets the table location and orientation from Phasespace
@@ -352,15 +331,18 @@ def showBoxOnEyes(tableIn):
 	
 	ori_table = tableTracker.get_euler()
 	tableIn.setEuler(ori_table)
-	
+
 table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
 vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
+
+# uncomment this to show piazza
+#piazza = viz.addChild('piazza.osgb')
 
 ### CODE NOT NEEDED
 
 '''
 def showImageToOneEye():
-	
+	ow
 	s = 1000
 	focalLen = 0.00081566 * s
 	planeWidth = 0.00126 * s
@@ -396,17 +378,38 @@ def showDuckToBothEyes():
 	## keep it as it is 
 '''
 
-grid = vizshape.addGrid().setScale([0.25]*3)
-table.alpha(0.8)
-
-
-
-def resetAndSaveHeadRigid(config):
-	
-	headRigidTracker = config.mocap.get_rigidTracker('hmd')
-	headRigidTracker.reset()
-	headRigidTracker.save()
-
-vizact.onkeydown('+',resetAndSaveHeadRigid,config)
-
 #_localOffset
+	
+'''
+video = viz.add('VideoCamera.dle')
+outP = video.getWebcamNames(available = False)
+print(outP)
+
+cam1 = video.addWebcam(id=0, size=(640,480))
+cam2 = video.addWebcam(id=1, size=(640,480))
+
+
+pl_left = vizshape.addPlane(
+	size = [planeHeight,planeWidth],
+	axis = vizshape.AXIS_Z,
+	cullFace = False
+)
+
+pl_right = vizshape.addPlane(
+	size = [planeHeight,planeWidth],
+	axis = vizshape.AXIS_Z,
+	cullFace = False
+)
+
+pl_left.texture(cam1)
+
+pl_right.texture(cam2)
+
+pl_left.setParent(config.leftEyeNode)
+pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)	
+
+pl_right.setParent(config.rightEyeNode)
+pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
+'''
+## Add code to update orientation with changes in head orientation
+
