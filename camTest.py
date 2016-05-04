@@ -2,9 +2,9 @@
 
 video = viz.add('VideoCamera.dle')
 
-cam_r = video.addWebcam()
+#cam_r = video.addWebcam()
 
-cam_l= video.addWebcam()
+cam_l=  video.addWebcam(id = 0)
 
 quad = viz.addTexQuad(pos = (0,1.8,1), texture = cam_l)
 quad.setEuler([0,0,-90])
