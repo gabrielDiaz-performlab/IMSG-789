@@ -309,12 +309,12 @@ def showBoxOnEyes(tableIn):
 	ori_table = tableTracker.get_euler()
 	tableIn.setEuler(ori_table)
 	
-table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
-vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
+#table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
+#vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
 
-piazza = viz.addChild('piazza.osgb')
+#piazza = viz.addChild('piazza.osgb')
 
-#showImageToBothEyes()
+showImageToBothEyes()
 
 # Code not needed
 '''

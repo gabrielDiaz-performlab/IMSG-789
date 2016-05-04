@@ -261,13 +261,13 @@ planeHeight = 2*focalLen*math.tan(74.34*3.14/(2*180))
 
 pl_left = vizshape.addPlane(
 		size = [planeWidth,planeHeight],
-		axis = vizshape.AXIS_Z,
+		axis = -vizshape.AXIS_Z,
 		cullFace = False
 		)
 
 pl_right = vizshape.addPlane(
 		size = [planeWidth,planeHeight],
-		axis = vizshape.AXIS_Z,
+		axis = -vizshape.AXIS_Z,
 		cullFace = False
 		)
 
@@ -277,15 +277,19 @@ pl_left.setPosition([0,0,focalLen],viz.ABS_PARENT)
 pl_right.setParent(config.rightEyeNode)
 pl_right.setPosition([0,0,focalLen],viz.ABS_PARENT)
 
+# Generate blank texture and apply them on a Quad
 tex_r = viz.addBlankTexture([planeWidth, planeHeight])
+#quad_r = viz.addTexQuad(pos = ([0,0,focalLen]),size = [planeWidth, planeHeight],texture = tex_r, parent = config.rightEyeNode)
+
 tex_l = viz.addBlankTexture([planeWidth, planeHeight])
+#quad_l = viz.addTexQuad(pos = ([0,0,focalLen]),size = [planeWidth, planeHeight],texture = tex_l, parent = config.leftEyeNode)  #tex_l change and run again!
+headEuler_YPR = config.headTracker.getEuler()
 
 pl_left.texture(tex_l)
 pl_right.texture(tex_r)
 
-headEuler_YPR = config.headTracker.getEuler()
-pl_left.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
-pl_right.setEuler([180+headEuler_YPR[0],0+headEuler_YPR[1],-90+headEuler_YPR[2]])
+pl_left.setEuler([headEuler_YPR[0],0+headEuler_YPR[1],90+headEuler_YPR[2]])
+pl_right.setEuler([headEuler_YPR[0],0+headEuler_YPR[1],90+headEuler_YPR[2]])
 
 capture_r = cv2.VideoCapture(0)
 capture_l = cv2.VideoCapture(1)
@@ -328,8 +332,8 @@ def showBoxOnEyes(tableIn):
 	ori_table = tableTracker.get_euler()
 	tableIn.setEuler(ori_table)
 
-table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
-vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
+#table = vizshape.addBox([0.460,0.66,0.60],splitFaces=False)
+#vizact.onupdate(viz.PRIORITY_LINKS,showBoxOnEyes,table)
 
 # uncomment this to show piazza
 #piazza = viz.addChild('piazza.osgb')
@@ -343,7 +347,7 @@ def showImageToOneEye():
 	focalLen = 0.00081566 * s
 	planeWidth = 0.00126 * s
 	planeHeight = 0.0022 * s
-	camcenter_dX = (640-606.3966)*1.75*(10^-6) * s
+	camcenter_dX = (640-606.3966)*1.75*(10^-6) * s`
 	camcenter_dY = (360-310.6875)*1.75*(10^-6) * s
 
 	br = vizshape.addPlane(
